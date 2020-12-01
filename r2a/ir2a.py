@@ -26,11 +26,11 @@ class IR2A(SimpleModule):
 
     @abstractmethod
     def handle_xml_request(self, msg):
-        self.send_down(msg)
+        pass
 
     @abstractmethod
     def handle_xml_response(self, msg):
-        self.send_up(msg)
+        pass
 
     @abstractmethod
     def handle_segment_size_request(self, msg):
