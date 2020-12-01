@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+"""
+@authors: Victor Henrique do Rêgo Vieira de Sousa
+
+@description: PyDash Project
+
+An implementation example of a FDash R2A Algorithm.
+
+the quality list is obtained with the parameter of handle_xml_response() method and the choice
+is made inside of handle_segment_size_request(), before sending the message down.
+"""
+
+
+from player.parser import *
+from r2a.ir2a import IR2A
+
+
+class R2A_FDash(IR2A):
+
+    def __init__(self, id):
+        IR2A.__init__(self, id)
+        self.parsed_mpd = ''
+        self.qi = []
+
+    def handle_xml_request(self, msg):
+        self.send_down(msg)
+
+    def handle_xml_response(self, msg):
+        self.parsed_mpd = parse_mpd(msg.get_payload())
+        self.qi = self.parsed_mpd.get_qi()
+
+        self.send_up(msg)
+
+    def handle_segment_size_request(self, msg):
+        # time to define the segment quality choose to make the request
+        msg.add_quality_id(self.qi[5])
+
+
+        #print(self.whiteboard.get_playback_history())
+        self.send_down(msg)
+
+    def handle_segment_size_response(self, msg):
+        self.send_up(msg)
+
+    def initialize(self):
+        pass
+
+    def finalization(self):
+        pass
