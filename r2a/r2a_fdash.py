@@ -9,7 +9,6 @@ An implementation example of a FDash R2A Algorithm.
 the quality list is obtained with the parameter of handle_xml_response() method and the choice
 is made inside of handle_segment_size_request(), before sending the message down.
 """
-
 # Se necessário, instale o pacote skfuzzy
 #pip install networkx==2.3
 #pip install scikit-fuzzy
@@ -32,8 +31,8 @@ class R2A_FDash(IR2A):
         self.parsed_mpd = ''
         self.qi = []
         self.whiteboard = Whiteboard.get_instance()
-        #plt.show()
-
+        self.T = 55 #Valor do artigo T = 35
+        self.d = 5  #                d = 60
 
     def handle_xml_request(self, msg):
         self.send_down(msg)
@@ -41,16 +40,28 @@ class R2A_FDash(IR2A):
     def handle_xml_response(self, msg):
         self.parsed_mpd = parse_mpd(msg.get_payload())
         self.qi = self.parsed_mpd.get_qi()
-
+        self.selected_qi = self.qi[19]
         self.send_up(msg)
 
     def handle_segment_size_request(self, msg):
         # time to define the segment quality choose to make the request
         
-        msg.add_quality_id(self.qi[5])
-        self.fuzzy_factor(3.5, 5.0)
+        #msg.add_quality_id(self.qi[5])
+        buffer_size = self.get_buffer_size()
+        diff_buffer_size = self.get_diff_buffer_size()
+        
+        factor = self.fuzzy_factor(buffer_size, diff_buffer_size)
 
-        #gprint(self.whiteboard.get_playback_history())
+        #print(str(buffer_size) + "Buffer_size: " + str(buffer_size) )
+        fuzzy_factor = self.selected_qi * factor
+        
+        for i in self.qi:
+            if fuzzy_factor > i:
+                self.selected_qi = i
+                print("fuzzy_factor: " + str(fuzzy_factor) + "selected: " +str(self.selected_qi))
+
+        print(self.selected_qi)
+        msg.add_quality_id(self.selected_qi)
         self.send_down(msg)
 
     def handle_segment_size_response(self, msg):
@@ -62,9 +73,34 @@ class R2A_FDash(IR2A):
     def finalization(self):
         pass
 
+    def get_buffer_size(self):
+            if len(self.whiteboard.get_playback_buffer_size()) != 0:
+                b = self.whiteboard.get_playback_buffer_size()
+                return float(b[-1][1])
+            return 0.0
+    
+    def get_diff_buffer_size(self):
+        #Retorna o diferencial dos valores de tamanho de buffer 
+        timebuffer = self.whiteboard.get_playback_buffer_size()
+        if timebuffer:
+            final = 0.0
+            final = timebuffer[-1]
+
+            diff_buffer = 0.0
+            diff_t = 0.0
+            #Lista invertida para acessar os valores mais novos primeiro
+            for init in timebuffer[::-1]:
+                #delta de tempo = self.d
+                if diff_t < self.d:
+                    diff_t = final[0] - init[0]
+                    diff_buffer = final[1] - init[1]
+            return diff_buffer
+        return 0.0
+
+
     def fuzzy_factor(self, bufferT, diffBufferT):
-        T = 15
-        d = 15 #Delta
+        T = self.T
+        d = self.d #DeltaTime
 
         # Cria as variáveis do problema
         bufferTime = ctrl.Antecedent(np.arange(0, 4*T, 0.01), 'bufferTime')
@@ -81,9 +117,9 @@ class R2A_FDash(IR2A):
 
 
         # Cria as funções de pertinência usando tipos variados
-        diffBufferTime['falling'] = fuzz.trapmf(diffBufferTime.universe, [(-10)*T, (-10)*T, ((-2)*T)/3, 0])
-        diffBufferTime['steady'] = fuzz.trimf(diffBufferTime.universe, [((-2)*T)/3, 0, 4*T])
-        diffBufferTime['rising'] = fuzz.trapmf(diffBufferTime.universe, [0, 4*T, 10*T, 10*T])
+        diffBufferTime['falling'] = fuzz.trapmf(diffBufferTime.universe, [(-10)*d, (-10)*d, ((-2)*d)/3, 0])
+        diffBufferTime['steady'] = fuzz.trimf(diffBufferTime.universe, [((-2)*d)/3, 0, 4*d])
+        diffBufferTime['rising'] = fuzz.trapmf(diffBufferTime.universe, [0, 4*d, 10*d, 10*d])
 
         N2 = 0.25
         N1 = 0.5
@@ -121,4 +157,4 @@ class R2A_FDash(IR2A):
 
         print("BitrateAtual * ", bitratefactor_simulador.output['bitratefactor'])
 
-        return bitratefactor_simulador.output
+        return bitratefactor_simulador.output['bitratefactor']
