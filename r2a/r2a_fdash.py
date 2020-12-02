@@ -33,6 +33,10 @@ class R2A_FDash(IR2A):
         self.whiteboard = Whiteboard.get_instance()
         self.T = 55 #Valor do artigo T = 35
         self.d = 5  #                d = 60
+        self.ultimo = 0.0
+        self.penultimo = 0.0
+        self.firsTimeOcurrence = True
+        self.timeParameter = 0.0
 
     def handle_xml_request(self, msg):
         self.send_down(msg)
@@ -74,28 +78,43 @@ class R2A_FDash(IR2A):
         pass
 
     def get_buffer_size(self):
-            if len(self.whiteboard.get_playback_buffer_size()) != 0:
-                b = self.whiteboard.get_playback_buffer_size()
-                return float(b[-1][1])
-            return 0.0
+            # if len(self.whiteboard.get_playback_buffer_size()) != 0:
+            #     b = self.whiteboard.get_playback_buffer_size()
+            #     return float(b[-1][1])
+            # return 0.0
+
+            bufferSize = self.whiteboard.get_playback_buffer_size() #pega a lista com o tamanho do buffer
+
+            if len(bufferSize) > 2:
+                if self.firsTimeOcurrence == True & bufferSize[-1][1] < bufferSize[-2][1]: #se for a primeira vez que um segmento e retirado do buffer
+                    self.ultimo = bufferSize[-1][0] - bufferSize[0][0]                                           #tempo de buffer do ultimo segmento 
+                    self.timeParameter = bufferSize[-1][0]                                                       #novo parametro de tempo para subtrair do prox segmento retirado do buffer
+                    self.firsTimeOcurrence = False                                                               #nao vai mais executar esse if
+                elif bufferSize[-1][1] < bufferSize[-2][1]:
+                    self.penultimo = self.ultimo
+                    self.ultimo = bufferSize[-1][0] - self.timeParameter
+                    self.timeParameter = bufferSize[-1][0]                                                       #novo parametro de tempo
+
+            return self.ultimo
     
     def get_diff_buffer_size(self):
-        #Retorna o diferencial dos valores de tamanho de buffer 
-        timebuffer = self.whiteboard.get_playback_buffer_size()
-        if timebuffer:
-            final = 0.0
-            final = timebuffer[-1]
-
-            diff_buffer = 0.0
-            diff_t = 0.0
-            #Lista invertida para acessar os valores mais novos primeiro
-            for init in timebuffer[::-1]:
-                #delta de tempo = self.d
-                if diff_t < self.d:
-                    diff_t = final[0] - init[0]
-                    diff_buffer = final[1] - init[1]
-            return diff_buffer
-        return 0.0
+        # #Retorna o diferencial dos valores de tamanho de buffer 
+        # timebuffer = self.whiteboard.get_playback_buffer_size() 
+        # if timebuffer:
+        #     final = 0.0
+        #     final = timebuffer[-1] #pega a ultima lista = buffer atual
+        #     diff_buffer = 0.0 
+        #     diff_t = 0.0 #variação ultimo menos penulimo
+            
+        #     #Lista invertida para acessar os valores mais novos primeiro
+        #     for init in timebuffer[::-1]:
+        #         #delta de tempo = self.d
+        #         if diff_t < self.d:
+        #             diff_t = final[0] - init[0]
+        #             diff_buffer = final[1] - init[1]
+        #     return diff_buffer
+        variacao = self.ultimo - self.penultimo 
+        return variacao
 
 
     def fuzzy_factor(self, bufferT, diffBufferT):
