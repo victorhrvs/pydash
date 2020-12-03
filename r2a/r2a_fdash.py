@@ -51,13 +51,13 @@ class R2A_FDash(IR2A):
         # time to define the segment quality choose to make the request
         #msg.add_quality_id(self.qi[5])
 
-        # #Algoritmo 1:
-        # buffer_size = self.get_buffer_size()
-        # diff_buffer_size = self.get_diff_buffer_size()
+        #Algoritmo 1:
+        buffer_size = self.get_buffer_size()
+        diff_buffer_size = self.get_diff_buffer_size()
         
-        #Algoritmo 2:
-        buffer_size = self.get_segmentTimeOnBuffer()
-        diff_buffer_size = self.get_deltaTi()
+        # #Algoritmo 2:
+        # buffer_size = self.get_segmentTimeOnBuffer()
+        # diff_buffer_size = self.get_deltaTi()
 
         factor = self.fuzzy_factor(buffer_size, diff_buffer_size)
 
@@ -88,20 +88,6 @@ class R2A_FDash(IR2A):
                 b = self.whiteboard.get_playback_buffer_size()
                 return float(b[-1][1])
             return 0.0
-
-            # bufferSize = self.whiteboard.get_playback_buffer_size() #pega a lista com o tamanho do buffer
-
-            # if len(bufferSize) > 2:
-            #     if self.firsTimeOcurrence == True & bufferSize[-1][1] < bufferSize[-2][1]: #se for a primeira vez que um segmento e retirado do buffer
-            #         self.ultimo = bufferSize[-1][0] - bufferSize[0][0]                                           #tempo de buffer do ultimo segmento 
-            #         self.timeParameter = bufferSize[-1][0]                                                       #novo parametro de tempo para subtrair do prox segmento retirado do buffer
-            #         self.firsTimeOcurrence = False                                                               #nao vai mais executar esse if
-            #     elif bufferSize[-1][1] < bufferSize[-2][1]:
-            #         self.penultimo = self.ultimo
-            #         self.ultimo = bufferSize[-1][0] - self.timeParameter
-            #         self.timeParameter = bufferSize[-1][0]                                                       #novo parametro de tempo
-
-            # return self.ultimo
     
     def get_diff_buffer_size(self):
         #Retorna o diferencial dos valores de tamanho de buffer 
@@ -119,8 +105,6 @@ class R2A_FDash(IR2A):
                     diff_buffer = final[1] - init[1]
             return diff_buffer
         return 0.0
-        # variacao = self.ultimo - self.penultimo 
-        # return variacao
     
     def get_segmentTimeOnBuffer(self): 
         #pega a lista com o tamanho do buffer
