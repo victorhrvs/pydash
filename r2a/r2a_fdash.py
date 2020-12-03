@@ -31,8 +31,8 @@ class R2A_FDash(IR2A):
         self.parsed_mpd = ''
         self.qi = []
         self.whiteboard = Whiteboard.get_instance()
-        self.T = 55 #Valor do artigo T = 35
-        self.d = 5  #                d = 60
+        self.T = 20 #Valor do artigo T = 35
+        self.d = 5  #                d = 60 = 
         self.ultimo = 0.0
         self.penultimo = 0.0
         self.firsTimeOcurrence = True
@@ -44,7 +44,7 @@ class R2A_FDash(IR2A):
     def handle_xml_response(self, msg):
         self.parsed_mpd = parse_mpd(msg.get_payload())
         self.qi = self.parsed_mpd.get_qi()
-        self.selected_qi = self.qi[19]
+        self.selected_qi = self.qi[0]
         self.send_up(msg)
 
     def handle_segment_size_request(self, msg):
@@ -59,7 +59,8 @@ class R2A_FDash(IR2A):
         # buffer_size = self.get_segmentTimeOnBuffer()
         # diff_buffer_size = self.get_deltaTi()
 
-        factor = self.fuzzy_factor(buffer_size, diff_buffer_size)
+        print("buffer: "+ str(buffer_size) + "diff buffer: " + str(diff_buffer_size))
+        factor = self.fuzzy_factor(buffer_size, diff_buffer_size) * 1.05
 
         #print(str(buffer_size) + "Buffer_size: " + str(buffer_size) )
         fuzzy_factor = self.selected_qi * factor
@@ -141,7 +142,7 @@ class R2A_FDash(IR2A):
 
         # Cria as variáveis do problema
         bufferTime = ctrl.Antecedent(np.arange(0, 4*T, 0.01), 'bufferTime')
-        diffBufferTime = ctrl.Antecedent(np.arange((-2)*T, (4*T)+10, 0.01), 'diffBufferTime')
+        diffBufferTime = ctrl.Antecedent(np.arange((-2)*d, (4*d)+10, 0.01), 'diffBufferTime')
         bitratefactor = ctrl.Consequent(np.arange(0, 2.5, 0.01), 'bitratefactor')
 
 
@@ -154,7 +155,7 @@ class R2A_FDash(IR2A):
 
 
         # Cria as funções de pertinência usando tipos variados
-        diffBufferTime['falling'] = fuzz.trapmf(diffBufferTime.universe, [(-10)*d, (-10)*d, ((-2)*d)/3, 0])
+        diffBufferTime['falling'] = fuzz.trapmf(diffBufferTime.universe, [-120, -120, ((-2)*d)/3, 0])
         diffBufferTime['steady'] = fuzz.trimf(diffBufferTime.universe, [((-2)*d)/3, 0, 4*d])
         diffBufferTime['rising'] = fuzz.trapmf(diffBufferTime.universe, [0, 4*d, 10*d, 10*d])
 
@@ -193,5 +194,13 @@ class R2A_FDash(IR2A):
         bitratefactor_simulador.compute()
 
         print("BitrateAtual * ", bitratefactor_simulador.output['bitratefactor'])
-
+        """
+        #Gera 3 graficos quando buffir_size = 50
+        if bufferT == 50:
+            bufferTime.view(sim=bitratefactor_simulador)
+            diffBufferTime.view(sim=bitratefactor_simulador)
+            bitratefactor.view(sim=bitratefactor_simulador)
+        
+            plt.show()
+        """
         return bitratefactor_simulador.output['bitratefactor']
