@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-@authors: Victor Henrique do Rêgo Vieira de Sousa
+Autores: 
+        Victor Henrique do Rêgo Vieira de Sousa
 
 @description: PyDash Project
 
@@ -20,9 +21,6 @@ from r2a.ir2a import IR2A
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
-import matplotlib.pyplot as plt
-
-
 
 class R2A_FDash(IR2A):
 
@@ -31,8 +29,8 @@ class R2A_FDash(IR2A):
         self.parsed_mpd = ''
         self.qi = []
         self.whiteboard = Whiteboard.get_instance()
-        self.T = 20 #Valor do artigo T = 35
-        self.d = 5  #                d = 60 = 
+        self.T = 5  #Valor do artigo T = 35
+        self.d = 2  #                d = 60
         self.ultimo = 0.0
         self.penultimo = 0.0
         self.firsTimeOcurrence = True
@@ -60,16 +58,32 @@ class R2A_FDash(IR2A):
         # diff_buffer_size = self.get_deltaTi()
 
         print("buffer: "+ str(buffer_size) + "diff buffer: " + str(diff_buffer_size))
-        factor = self.fuzzy_factor(buffer_size, diff_buffer_size) * 1.05
+        factor = self.fuzzy_factor(buffer_size, diff_buffer_size)
 
         #print(str(buffer_size) + "Buffer_size: " + str(buffer_size) )
         fuzzy_factor = self.selected_qi * factor
-        print("selected qi:", self.selected_qi)
-        print("selected qi x factor:", self.selected_qi * factor)
+        
+        # Evita que qualidades altas sejam selecionadas repetinamente
+        if factor > 0:
+            if fuzzy_factor > self.qi[14]:
+                pass
+            if fuzzy_factor > self.qi[10]:
+                fuzzy_factor = fuzzy_factor * 0.90
+            if fuzzy_factor > self.qi[7]:
+                fuzzy_factor = fuzzy_factor * 0.90
+            if fuzzy_factor > self.qi[5]:
+                fuzzy_factor = fuzzy_factor * 0.90
+            if fuzzy_factor > self.qi[3]:
+                fuzzy_factor = fuzzy_factor * 0.90
+
+        #print("selected qi:", self.selected_qi)
+        #print("selected qi x factor:", self.selected_qi * factor)
+        
+
         for i in self.qi:
             if fuzzy_factor > i:
                 self.selected_qi = i
-                print("fuzzy_factor: " + str(fuzzy_factor) + "selected: " +str(self.selected_qi))
+        print("buffer_size: " + str(buffer_size) + " diff_buffer: " + str(diff_buffer_size) + " fuzzy_factor: " + str(fuzzy_factor) + " selected: " +str(self.selected_qi))
 
         print(self.selected_qi)
         msg.add_quality_id(self.selected_qi)
@@ -140,9 +154,11 @@ class R2A_FDash(IR2A):
         T = self.T
         d = self.d #DeltaTime
 
+
+
         # Cria as variáveis do problema
         bufferTime = ctrl.Antecedent(np.arange(0, 4*T, 0.01), 'bufferTime')
-        diffBufferTime = ctrl.Antecedent(np.arange((-2)*d, (4*d)+10, 0.01), 'diffBufferTime')
+        diffBufferTime = ctrl.Antecedent(np.arange((-2)*d, (4*d)+10, 0.005), 'diffBufferTime')
         bitratefactor = ctrl.Consequent(np.arange(0, 2.5, 0.01), 'bitratefactor')
 
 
@@ -196,6 +212,7 @@ class R2A_FDash(IR2A):
         print("BitrateAtual * ", bitratefactor_simulador.output['bitratefactor'])
         """
         #Gera 3 graficos quando buffir_size = 50
+        import matplotlib.pyplot as plt
         if bufferT == 50:
             bufferTime.view(sim=bitratefactor_simulador)
             diffBufferTime.view(sim=bitratefactor_simulador)
