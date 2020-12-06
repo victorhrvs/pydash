@@ -29,7 +29,7 @@ class R2A_FDash(IR2A):
         self.parsed_mpd = ''
         self.qi = []
         self.whiteboard = Whiteboard.get_instance()
-        self.T = 5  #Valor do artigo T = 35
+        self.T = 8  #Valor do artigo T = 35
         self.d = 2  #                d = 60
         self.ultimo = 0.0
         self.penultimo = 0.0
@@ -57,33 +57,28 @@ class R2A_FDash(IR2A):
         # buffer_size = self.get_segmentTimeOnBuffer()
         # diff_buffer_size = self.get_deltaTi()
 
-        print("buffer: "+ str(buffer_size) + "diff buffer: " + str(diff_buffer_size))
+        
         factor = self.fuzzy_factor(buffer_size, diff_buffer_size)
 
         #print(str(buffer_size) + "Buffer_size: " + str(buffer_size) )
         fuzzy_factor = self.selected_qi * factor
         
+        print("factor   : "+ str(fuzzy_factor) )
         # Evita que qualidades altas sejam selecionadas repetinamente
-        if factor > 0:
-            if fuzzy_factor > self.qi[14]:
-                pass
-            if fuzzy_factor > self.qi[10]:
-                fuzzy_factor = fuzzy_factor * 0.90
-            if fuzzy_factor > self.qi[7]:
-                fuzzy_factor = fuzzy_factor * 0.90
+        if factor > 1:
+            if fuzzy_factor >= self.qi[18]:
+                fuzzy_factor = fuzzy_factor * 1.30
             if fuzzy_factor > self.qi[5]:
-                fuzzy_factor = fuzzy_factor * 0.90
-            if fuzzy_factor > self.qi[3]:
-                fuzzy_factor = fuzzy_factor * 0.90
+                fuzzy_factor = fuzzy_factor * 0.6896
 
         #print("selected qi:", self.selected_qi)
         #print("selected qi x factor:", self.selected_qi * factor)
-        
+        print("factor IF: "+ str(fuzzy_factor) )
 
         for i in self.qi:
             if fuzzy_factor > i:
                 self.selected_qi = i
-        print("buffer_size: " + str(buffer_size) + " diff_buffer: " + str(diff_buffer_size) + " fuzzy_factor: " + str(fuzzy_factor) + " selected: " +str(self.selected_qi))
+        #print("buffer_size: " + str(buffer_size) + " diff_buffer: " + str(diff_buffer_size) + " fuzzy_factor: " + str(fuzzy_factor) + " selected: " +str(self.selected_qi))
 
         print(self.selected_qi)
         msg.add_quality_id(self.selected_qi)
