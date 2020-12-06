@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Autores: 
-        Victor Henrique do Rêgo Vieira de Sousa
+        Victor Henrique do Rêgo Vieira de Sousa, Lucas de Lima Sousa Bezerra
 
 @description: PyDash Project
 
